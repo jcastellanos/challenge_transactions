@@ -19,9 +19,10 @@ type listener struct {
 	processTransactionsUsecase usecase.ProcessTransactionsUsecase
 }
 
-func NewListener(folder string) listener {
+func NewListener(folder string, processTransactionsUsecase usecase.ProcessTransactionsUsecase) listener {
 	return listener{
-		folder: folder,
+		folder:                     folder,
+		processTransactionsUsecase: processTransactionsUsecase,
 	}
 }
 
@@ -71,10 +72,11 @@ func (l listener) processFile(filePath string) {
 		}
 		numLine++
 	}
-	l.processTransactionsUsecase.Execute(transactions)
-
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error leyendo el archivo: %v", err)
+	}
+	if err = l.processTransactionsUsecase.Execute(transactions); err != nil {
+		log.Printf("Error procesando transacciones: %v", err)
 	}
 
 	// Eliminar el archivo después de procesarlo

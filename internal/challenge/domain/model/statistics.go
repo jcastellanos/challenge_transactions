@@ -1,8 +1,6 @@
 package model
 
-import (
-	"log"
-)
+import "github.com/jcastellanos/challenge_transactions/internal/challenge/util/math"
 
 type Statistics struct {
 	totalBalance        float64
@@ -28,6 +26,7 @@ func (s *Statistics) Add(tx Transaction) {
 	if tx.Transaction < 0 {
 		s.debits = append(s.debits, tx.Transaction)
 	}
+	s.transactionsByMonth[tx.Month] = s.transactionsByMonth[tx.Month] + 1
 
 }
 
@@ -36,22 +35,16 @@ func (s Statistics) TotalBalance() float64 {
 }
 
 func (s Statistics) AverageCredit() float64 {
-	return average(s.credits)
+	return math.Average(s.credits)
 }
 
 func (s Statistics) AverageDebit() float64 {
-	return average(s.debits)
+	return math.Average(s.debits)
 }
 
-func average(numbers []float64) float64 {
-	if len(numbers) == 0 {
-		log.Printf("el slice esta vacio")
-		return 0
-	}
-	var sum float64 = 0
-	for _, number := range numbers {
-		sum += number
-	}
-	average := sum / float64(len(numbers))
-	return average
+// Return the number of transactions by month.
+// It returns a map, the key of the map is the month of the year (1 -> January), the
+// map only contains the month than has transactions.
+func (s Statistics) TransactionsByMonth() map[int]int {
+	return s.transactionsByMonth
 }
