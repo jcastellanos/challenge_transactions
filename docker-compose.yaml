@@ -1,0 +1,10 @@
+services:
+  challenge:
+    build: .
+    environment:
+      TRANSACTIONS_FOLDER: "/transactions"
+      EMAIL_TO: "mail_to@gmail.com"
+      EMAIL_USERNAME: "mail_smtp@gmail.com"
+      EMAIL_PASSWORD: "password_app_gmail"
+    volumes:
+      - /folder_local_transactions:/transactions
