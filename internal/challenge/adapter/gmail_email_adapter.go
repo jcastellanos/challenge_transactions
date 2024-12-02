@@ -9,6 +9,8 @@ import (
 	"mime/multipart"
 	"net/smtp"
 	"path/filepath"
+
+	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/model"
 )
 
 type EmailConfig struct {
@@ -28,8 +30,8 @@ func NewGmailEmailAdapter(emailConfig EmailConfig) gmailEmailAdapter {
 	}
 }
 
-func (ga gmailEmailAdapter) SendEmail(to string, subject string, variables map[string]string, attachmentPath string) error {
-	html, err := htmlFromTemplate("template/template.html", variables)
+func (ga gmailEmailAdapter) SendEmail(to string, subject string, statistics model.Statistics, attachmentPath string) error {
+	html, err := htmlFromTemplate("template/template.html", statistics)
 	if err != nil {
 		return err
 	}
@@ -97,7 +99,12 @@ func (ga gmailEmailAdapter) SendEmail(to string, subject string, variables map[s
 	return nil
 }
 
-func htmlFromTemplate(templatePath string, variables map[string]string) (string, error) {
+func htmlFromTemplate(templatePath string, statistics model.Statistics) (string, error) {
+	variables := map[string]interface{}{
+		"totalBalance":  fmt.Sprintf("%.2f", statistics.TotalBalance()),
+		"averageCredit": fmt.Sprintf("%.2f", statistics.AverageCredit()),
+		"averageDebit":  fmt.Sprintf("%.2f", statistics.AverageDebit()),
+	}
 	// Leer y procesar la plantilla HTML
 	tplContent, err := ioutil.ReadFile(templatePath)
 	if err != nil {

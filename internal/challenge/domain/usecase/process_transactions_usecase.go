@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -32,13 +31,9 @@ func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction, tr
 	}
 	emailTo := os.Getenv("EMAIL_TO")
 	subject := "Your transactions"
-	variables := map[string]string{
-		"totalBalance":  fmt.Sprintf("%.2f", statistics.TotalBalance()),
-		"averageCredit": fmt.Sprintf("%.2f", statistics.AverageCredit()),
-		"averageDebit":  fmt.Sprintf("%.2f", statistics.AverageDebit()),
-	}
+
 	log.Println("enviando correo")
-	if err := p.emailPort.SendEmail(emailTo, subject, variables, transactionsPath); err != nil {
+	if err := p.emailPort.SendEmail(emailTo, subject, statistics, transactionsPath); err != nil {
 		return err
 	}
 	log.Println("transacciones procesadas")
