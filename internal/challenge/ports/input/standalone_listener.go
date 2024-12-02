@@ -27,17 +27,18 @@ func NewListener(folder string, processTransactionsUsecase usecase.ProcessTransa
 }
 
 func (l listener) Run() {
-	log.Printf("Revisando la carpeta: %s", l.folder)
+	pendingFolder := l.folder + "/pending"
+	log.Printf("Revisando la carpeta: %s", pendingFolder)
 
 	for {
-		files, err := os.ReadDir(l.folder)
+		files, err := os.ReadDir(pendingFolder)
 		if err != nil {
 			log.Fatalf("Error leyendo la carpeta: %v", err)
 		}
 
 		for _, file := range files {
 			if !file.IsDir() {
-				filePath := filepath.Join(l.folder, file.Name())
+				filePath := filepath.Join(pendingFolder, file.Name())
 				l.processFile(filePath)
 			}
 		}
@@ -75,13 +76,13 @@ func (l listener) processFile(filePath string) {
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error leyendo el archivo: %v", err)
 	}
-	if err = l.processTransactionsUsecase.Execute(transactions); err != nil {
+	if err = l.processTransactionsUsecase.Execute(transactions, filePath); err != nil {
 		log.Printf("Error procesando transacciones: %v", err)
 	}
-
-	// Eliminar el archivo después de procesarlo
-	if err := os.Remove(filePath); err != nil {
-		log.Printf("Error eliminando el archivo: %v", err)
+	destPath := filepath.Join(l.folder+"/processed", filepath.Base(filePath))
+	err = os.Rename(filePath, destPath)
+	if err != nil {
+		log.Printf("Error moviendo el archivo: %v", err)
 	}
 }
 

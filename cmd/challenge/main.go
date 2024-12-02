@@ -8,7 +8,7 @@ import (
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/adapter"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/usecase"
 	standaloneListener "github.com/jcastellanos/challenge_transactions/internal/challenge/ports/input"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -27,8 +27,8 @@ func main() {
 	if runtime == "lambda" {
 
 	} else {
-		folder := "./transactions"
-		db, err := sql.Open("sqlite3", "challenge.db")
+		folder := os.Getenv("TRANSACTIONS_FOLDER")
+		db, err := sql.Open("sqlite", "challenge.db")
 		if err != nil {
 			log.Fatalf("Error conectando a la base de datos: %v", err)
 		}

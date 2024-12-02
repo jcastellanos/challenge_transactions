@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -19,7 +20,7 @@ func NewProcessTransactionUsecase(emailPort EmailPort, persistencePort Persisten
 	}
 }
 
-func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction) error {
+func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction, transactionsPath string) error {
 	log.Println("procesando transacciones")
 	statistics := model.NewStatistics()
 	for _, ts := range transactions {
@@ -34,15 +35,15 @@ func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction) er
 	}
 	// Datos del correo
 	emailTo := os.Getenv("EMAIL_TO")
-	subject := "Correo con Imagen y Adjunto"
-	attachmentPath := "transactions/processed/acc1.csv" // TODO cambiar por el correcto
+	subject := "Your transactions"
 	variables := map[string]string{
-		"Nombre": "Juan",
-		"Fecha":  "28/11/2024",
+		"totalBalance":  fmt.Sprintf("%.2f", statistics.TotalBalance()),
+		"averageCredit": fmt.Sprintf("%.2f", statistics.AverageCredit()),
+		"averageDebit":  fmt.Sprintf("%.2f", statistics.AverageDebit()),
 	}
 	// Enviar el correo
 	log.Println("enviando correo")
-	if err := p.emailPort.SendEmail(emailTo, subject, variables, attachmentPath); err != nil {
+	if err := p.emailPort.SendEmail(emailTo, subject, variables, transactionsPath); err != nil {
 		return err
 	}
 	log.Println("transacciones procesadas")
