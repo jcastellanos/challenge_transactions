@@ -26,14 +26,10 @@ func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction, tr
 	for _, ts := range transactions {
 		statistics.Add(ts)
 	}
-	log.Println(statistics.TotalBalance())
-	log.Println(statistics.AverageCredit())
-	log.Println(statistics.AverageDebit())
 	log.Println("persistiendo transacciones")
 	if err := p.persistencePort.InsertTransactions(transactions); err != nil {
 		return err
 	}
-	// Datos del correo
 	emailTo := os.Getenv("EMAIL_TO")
 	subject := "Your transactions"
 	variables := map[string]string{
@@ -41,7 +37,6 @@ func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction, tr
 		"averageCredit": fmt.Sprintf("%.2f", statistics.AverageCredit()),
 		"averageDebit":  fmt.Sprintf("%.2f", statistics.AverageDebit()),
 	}
-	// Enviar el correo
 	log.Println("enviando correo")
 	if err := p.emailPort.SendEmail(emailTo, subject, variables, transactionsPath); err != nil {
 		return err
