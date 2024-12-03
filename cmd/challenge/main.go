@@ -5,9 +5,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/adapter"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/usecase"
-	standaloneListener "github.com/jcastellanos/challenge_transactions/internal/challenge/ports/input"
+	handler "github.com/jcastellanos/challenge_transactions/internal/challenge/ports/input"
 	_ "modernc.org/sqlite"
 )
 
@@ -25,7 +26,10 @@ func main() {
 	}
 	emailPort := adapter.NewGmailEmailAdapter(emailConfig)
 	if runtime == "lambda" {
-
+		persistencePort := adapter.NewMockPersistenceAdapter()
+		processTransactionsUsecase := usecase.NewProcessTransactionUsecase(emailPort, persistencePort)
+		lambdaHadler := handler.NewLambdaHandler(processTransactionsUsecase)
+		lambda.Start(lambdaHadler.Handle)
 	} else {
 		folder := os.Getenv("TRANSACTIONS_FOLDER")
 		db, err := sql.Open("sqlite", "challenge.db")
@@ -36,7 +40,7 @@ func main() {
 		persistencePort := adapter.NewSqlitePersistenceAdapter(db)
 		persistencePort.InitializeDatabase()
 		processTransactionsUsecase := usecase.NewProcessTransactionUsecase(emailPort, persistencePort)
-		standaloneListener := standaloneListener.NewListener(folder, processTransactionsUsecase)
+		standaloneListener := handler.NewStandaloneListener(folder, processTransactionsUsecase)
 		standaloneListener.Run()
 	}
 }
