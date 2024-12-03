@@ -5,9 +5,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/adapter"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/usecase"
-	standaloneListener "github.com/jcastellanos/challenge_transactions/internal/challenge/ports/input"
+	handler "github.com/jcastellanos/challenge_transactions/internal/challenge/ports/input"
 	_ "modernc.org/sqlite"
 )
 
@@ -25,7 +29,17 @@ func main() {
 	}
 	emailPort := adapter.NewGmailEmailAdapter(emailConfig)
 	if runtime == "lambda" {
-
+		sess, err := session.NewSession(&aws.Config{
+			Region: aws.String("us-east-1"),
+		})
+		if err != nil {
+			log.Fatalf("Error creando la sesion de AWS: %v", err)
+		}
+		svc := dynamodb.New(sess)
+		persistencePort := adapter.NewDynamoPersistenceAdapter(svc)
+		processTransactionsUsecase := usecase.NewProcessTransactionUsecase(emailPort, persistencePort)
+		lambdaHadler := handler.NewLambdaHandler(processTransactionsUsecase)
+		lambda.Start(lambdaHadler.Handle)
 	} else {
 		folder := os.Getenv("TRANSACTIONS_FOLDER")
 		db, err := sql.Open("sqlite", "challenge.db")
@@ -36,7 +50,7 @@ func main() {
 		persistencePort := adapter.NewSqlitePersistenceAdapter(db)
 		persistencePort.InitializeDatabase()
 		processTransactionsUsecase := usecase.NewProcessTransactionUsecase(emailPort, persistencePort)
-		standaloneListener := standaloneListener.NewListener(folder, processTransactionsUsecase)
+		standaloneListener := handler.NewStandaloneListener(folder, processTransactionsUsecase)
 		standaloneListener.Run()
 	}
 }

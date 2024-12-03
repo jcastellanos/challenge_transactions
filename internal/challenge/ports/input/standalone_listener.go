@@ -1,13 +1,10 @@
-package standaloneListener
+package handler
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/model"
@@ -19,7 +16,7 @@ type listener struct {
 	processTransactionsUsecase usecase.ProcessTransactionsUsecase
 }
 
-func NewListener(folder string, processTransactionsUsecase usecase.ProcessTransactionsUsecase) listener {
+func NewStandaloneListener(folder string, processTransactionsUsecase usecase.ProcessTransactionsUsecase) listener {
 	return listener{
 		folder:                     folder,
 		processTransactionsUsecase: processTransactionsUsecase,
@@ -63,9 +60,7 @@ func (l listener) processFile(filePath string) {
 	for scanner.Scan() {
 		strTx := scanner.Text()
 		if numLine > 0 {
-			if transaction, err := parseTransaction(strTx); err == nil {
-				log.Println(strTx)
-				log.Println(transaction)
+			if transaction, err := model.ParseTransaction(strTx); err == nil {
 				transactions = append(transactions, *transaction)
 			} else {
 				log.Printf("Error con la estructura del registro: %s", strTx)
@@ -84,41 +79,4 @@ func (l listener) processFile(filePath string) {
 	if err != nil {
 		log.Printf("Error moviendo el archivo: %v", err)
 	}
-}
-
-func parseTransaction(transaction string) (*model.Transaction, error) {
-	tokens := strings.Split(transaction, ",")
-	if len(tokens) != 3 {
-		return nil, fmt.Errorf("entrada no válida, se esperaban 3 partes separadas por comas")
-	}
-	id, err := strconv.Atoi(tokens[0])
-	if err != nil {
-		return nil, fmt.Errorf("error al convertir Id: %v", err)
-	}
-	date := tokens[1]
-	month, day, err := parseDate(date)
-	if err != nil {
-		return nil, fmt.Errorf("error al convertir transaction: %v", err)
-	}
-	tx, err := strconv.ParseFloat(tokens[2], 64)
-	if err != nil {
-		return nil, fmt.Errorf("error al convertir transaction: %v", err)
-	}
-
-	return &model.Transaction{
-		Id:          id,
-		Month:       month,
-		Day:         day,
-		Transaction: float64(tx),
-	}, nil
-}
-
-func parseDate(date string) (int, int, error) {
-	const layout = "1/2" // dd/mm en Go es representado por 02/01
-
-	// Intentar analizar la fecha
-	if parseDate, err := time.Parse(layout, date); err == nil {
-		return int(parseDate.Month()), parseDate.Day(), nil
-	}
-	return 0, 0, fmt.Errorf("fecha de transaccion no valida: %s", date)
 }
