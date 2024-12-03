@@ -6,6 +6,9 @@ import (
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/adapter"
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/usecase"
 	handler "github.com/jcastellanos/challenge_transactions/internal/challenge/ports/input"
@@ -26,7 +29,14 @@ func main() {
 	}
 	emailPort := adapter.NewGmailEmailAdapter(emailConfig)
 	if runtime == "lambda" {
-		persistencePort := adapter.NewMockPersistenceAdapter()
+		sess, err := session.NewSession(&aws.Config{
+			Region: aws.String("us-east-1"),
+		})
+		if err != nil {
+			log.Fatalf("Error creando la sesion de AWS: %v", err)
+		}
+		svc := dynamodb.New(sess)
+		persistencePort := adapter.NewDynamoPersistenceAdapter(svc)
 		processTransactionsUsecase := usecase.NewProcessTransactionUsecase(emailPort, persistencePort)
 		lambdaHadler := handler.NewLambdaHandler(processTransactionsUsecase)
 		lambda.Start(lambdaHadler.Handle)
