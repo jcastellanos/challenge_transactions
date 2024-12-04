@@ -49,6 +49,7 @@ La lambda se debe configurar para que el desencadenador sea la escritura de un a
 
 La lambda debe ser ejecutada con un rol que tenga la siguiente politica asociada (esta politica es necesario cerrarla mejor para mejorar la seguridad):
 
+```json
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -78,3 +79,4 @@ La lambda debe ser ejecutada con un rol que tenga la siguiente politica asociada
         }
     ]
 }
+```
