@@ -21,14 +21,20 @@ Y en el volume dentro del docker-compose se debe modificar el /folder_local_tran
 - /folder_local_transactions/pending: carpeta donde se copian los .csv con las transacciones para procesarlos.
 - /folder_local_transactions/processed: carpeta donde se mueven los archivos .csv luego de procesarlos.
 
-Para ejecutar el docker se puede utilizar el comando: docker-compuse up
+Para ejecutar el docker se puede utilizar el comando: 
+
+```console
+> docker-compuse up
+```
 
 ### Infraestructura con lambda
 
 Se debe crear paquete .zip para subir al servicio de lambda para esto se puede ejecutar:
 
-GOOS=linux GOARCH=amd64 go build -o bootstrap cmd/challenge/main.go
-zip boostrap.zip template template/*  bootstrap
+```console
+> GOOS=linux GOARCH=amd64 go build -o bootstrap cmd/challenge/main.go
+> zip boostrap.zip template template/*  bootstrap
+```
 
 Luego de esto en la consola de lambda se puede subir el archivo bootstrap.zip.
 
