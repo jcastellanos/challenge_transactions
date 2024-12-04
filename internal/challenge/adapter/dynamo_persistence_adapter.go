@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,8 +22,11 @@ func NewDynamoPersistenceAdapter(svc *dynamodb.DynamoDB) dynamoPersistenceAdapte
 }
 
 func (sa dynamoPersistenceAdapter) InsertTransactions(transactions []model.Transaction) error {
+	if len(transactions) == 0 {
+		log.Printf("empty transactions")
+		return nil
+	}
 	tableName := "transactions"
-	// Dividir las transacciones en lotes de hasta 25 elementos (límite de BatchWriteItem)
 	const batchSize = 25
 	for i := 0; i < len(transactions); i += batchSize {
 		end := i + batchSize
@@ -30,8 +34,6 @@ func (sa dynamoPersistenceAdapter) InsertTransactions(transactions []model.Trans
 			end = len(transactions)
 		}
 		batch := transactions[i:end]
-
-		// Crear las solicitudes de escritura para el lote actual
 		var writeRequests []*dynamodb.WriteRequest
 		for _, t := range batch {
 			date := fmt.Sprintf("%d/%d", t.Month, t.Day)
@@ -47,7 +49,6 @@ func (sa dynamoPersistenceAdapter) InsertTransactions(transactions []model.Trans
 				},
 			})
 		}
-		// Enviar el lote a DynamoDB
 		_, err := sa.svc.BatchWriteItem(&dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]*dynamodb.WriteRequest{
 				tableName: writeRequests,

@@ -11,26 +11,26 @@ import (
 	"github.com/jcastellanos/challenge_transactions/internal/challenge/domain/usecase"
 )
 
-type listener struct {
+type standaloneHandler struct {
 	folder                     string
 	processTransactionsUsecase usecase.ProcessTransactionsUsecase
 }
 
-func NewStandaloneListener(folder string, processTransactionsUsecase usecase.ProcessTransactionsUsecase) listener {
-	return listener{
+func NewStandaloneHandler(folder string, processTransactionsUsecase usecase.ProcessTransactionsUsecase) standaloneHandler {
+	return standaloneHandler{
 		folder:                     folder,
 		processTransactionsUsecase: processTransactionsUsecase,
 	}
 }
 
-func (l listener) Run() {
+func (l standaloneHandler) Run() {
 	pendingFolder := l.folder + "/pending"
-	log.Printf("Revisando la carpeta: %s", pendingFolder)
+	log.Printf("scanning the folder: %s", pendingFolder)
 
 	for {
 		files, err := os.ReadDir(pendingFolder)
 		if err != nil {
-			log.Fatalf("Error leyendo la carpeta: %v", err)
+			log.Fatalf("error reading the folder: %v", err)
 		}
 
 		for _, file := range files {
@@ -44,12 +44,12 @@ func (l listener) Run() {
 	}
 }
 
-func (l listener) processFile(filePath string) {
-	log.Printf("Leyendo archivo: %s", filePath)
+func (l standaloneHandler) processFile(filePath string) {
+	log.Printf("reading file: %s", filePath)
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Printf("Error abriendo el archivo: %v", err)
+		log.Printf("error reading file: %v", err)
 		return
 	}
 	defer file.Close()
@@ -63,20 +63,20 @@ func (l listener) processFile(filePath string) {
 			if transaction, err := model.ParseTransaction(strTx); err == nil {
 				transactions = append(transactions, *transaction)
 			} else {
-				log.Printf("Error con la estructura del registro: %s", strTx)
+				log.Printf("error with the structure of the row: %s", strTx)
 			}
 		}
 		numLine++
 	}
 	if err := scanner.Err(); err != nil {
-		log.Printf("Error leyendo el archivo: %v", err)
+		log.Printf("error reading the file: %v", err)
 	}
 	if err = l.processTransactionsUsecase.Execute(transactions, filePath); err != nil {
-		log.Printf("Error procesando transacciones: %v", err)
+		log.Printf("error processing transactions: %v", err)
 	}
 	destPath := filepath.Join(l.folder+"/processed", filepath.Base(filePath))
 	err = os.Rename(filePath, destPath)
 	if err != nil {
-		log.Printf("Error moviendo el archivo: %v", err)
+		log.Printf("error moving the file: %v", err)
 	}
 }
