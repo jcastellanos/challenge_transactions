@@ -4,7 +4,7 @@ import "log"
 
 func Average(numbers []float64) float64 {
 	if len(numbers) == 0 {
-		log.Printf("el slice esta vacio")
+		log.Printf("empty slice")
 		return 0
 	}
 	var sum float64 = 0

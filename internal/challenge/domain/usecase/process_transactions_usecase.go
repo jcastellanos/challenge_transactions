@@ -20,22 +20,22 @@ func NewProcessTransactionUsecase(emailPort EmailPort, persistencePort Persisten
 }
 
 func (p ProcessTransactionsUsecase) Execute(transactions []model.Transaction, transactionsPath string) error {
-	log.Println("procesando transacciones")
+	log.Println("processing transactions ...")
 	statistics := model.NewStatistics()
 	for _, ts := range transactions {
 		statistics.Add(ts)
 	}
-	log.Println("persistiendo transacciones")
+	log.Println("saving transactions to database")
 	if err := p.persistencePort.InsertTransactions(transactions); err != nil {
 		return err
 	}
 	emailTo := os.Getenv("EMAIL_TO")
 	subject := "Your transactions"
 
-	log.Println("enviando correo")
+	log.Println("sending email")
 	if err := p.emailPort.SendEmail(emailTo, subject, statistics, transactionsPath); err != nil {
 		return err
 	}
-	log.Println("transacciones procesadas")
+	log.Println("transactions processed successfully")
 	return nil
 }
